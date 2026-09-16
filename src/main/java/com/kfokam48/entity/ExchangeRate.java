@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,8 +34,9 @@ public class ExchangeRate {
     @Column(name = "to_currency", nullable = false, length = 3)
     private String toCurrency;
 
-    @Column(nullable = false)
-    private Double rate;
+    /** Taux stocké en décimal exact, avec assez de décimales pour les devises faibles. */
+    @Column(nullable = false, precision = 19, scale = 10)
+    private BigDecimal rate;
 
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;

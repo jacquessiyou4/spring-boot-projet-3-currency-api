@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 /**
  * Taux de change entre deux devises, tel qu'exposé par l'API.
  */
@@ -13,5 +15,5 @@ import lombok.NoArgsConstructor;
 public class ExchangeRateDTO {
     private String fromCurrency;
     private String toCurrency;
-    private Double rate;
+    private BigDecimal rate;
 }

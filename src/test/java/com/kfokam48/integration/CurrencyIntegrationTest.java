@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.*;
@@ -51,7 +52,7 @@ class CurrencyIntegrationTest {
     void clearHistory_shouldWork() throws Exception {
         ConversionResult cr = ConversionResult.builder()
                 .fromCurrency("EUR").toCurrency("USD")
-                .amountFrom(100.0).amountTo(112.0).rate(1.12).source("API")
+                .amountFrom(new BigDecimal("100")).amountTo(new BigDecimal("112.00")).rate(new BigDecimal("1.12")).source("API")
                 .createdAt(LocalDateTime.now()).build();
         conversionResultRepository.save(cr);
 
@@ -79,7 +80,7 @@ class CurrencyIntegrationTest {
     @Test
     void getRateDetail_afterSaving_shouldReturnRate() throws Exception {
         ExchangeRate rate = ExchangeRate.builder()
-                .fromCurrency("EUR").toCurrency("USD").rate(1.12)
+                .fromCurrency("EUR").toCurrency("USD").rate(new BigDecimal("1.12"))
                 .expiresAt(LocalDateTime.now().plusHours(24)).build();
         exchangeRateRepository.save(rate);
 
@@ -91,10 +92,10 @@ class CurrencyIntegrationTest {
     @Test
     void getRatesFrom_shouldFilterByCurrency() throws Exception {
         exchangeRateRepository.save(ExchangeRate.builder()
-                .fromCurrency("EUR").toCurrency("USD").rate(1.12)
+                .fromCurrency("EUR").toCurrency("USD").rate(new BigDecimal("1.12"))
                 .expiresAt(LocalDateTime.now().plusHours(24)).build());
         exchangeRateRepository.save(ExchangeRate.builder()
-                .fromCurrency("GBP").toCurrency("USD").rate(1.30)
+                .fromCurrency("GBP").toCurrency("USD").rate(new BigDecimal("1.30"))
                 .expiresAt(LocalDateTime.now().plusHours(24)).build());
 
         mockMvc.perform(get("/convert/rates/EUR"))

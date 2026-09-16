@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +49,7 @@ class ExchangeRateServiceTest {
         when(exchangeRateRepository.findByFromCurrencyAndToCurrency("EUR", "USD"))
                 .thenReturn(Optional.empty());
 
-        assertThat(service.getRate("EUR", "USD")).isEqualTo(1.1235);
+        assertThat(service.getRate("EUR", "USD")).isEqualByComparingTo("1.1235");
         verify(exchangeRateRepository).save(any(ExchangeRate.class));
     }
 
@@ -64,13 +65,13 @@ class ExchangeRateServiceTest {
         when(exchangeRateRepository.findByFromCurrencyAndToCurrency("EUR", "JPY"))
                 .thenReturn(Optional.empty());
 
-        assertThat(service.getRate("EUR", "JPY")).isEqualTo(157.0);
+        assertThat(service.getRate("EUR", "JPY")).isEqualByComparingTo("157");
         verify(exchangeRateRepository).save(any(ExchangeRate.class));
     }
 
     @Test
     void getRate_sameCurrency_shouldReturnOne() {
-        assertThat(service.getRate("USD", "USD")).isEqualTo(1.0);
+        assertThat(service.getRate("USD", "USD")).isEqualByComparingTo("1");
         verifyNoInteractions(externalApiClient);
     }
 
@@ -80,9 +81,9 @@ class ExchangeRateServiceTest {
                 .thenThrow(new ExternalApiException("API down", null));
         when(exchangeRateRepository.findByFromCurrencyAndToCurrency("EUR", "USD"))
                 .thenReturn(Optional.of(ExchangeRate.builder()
-                        .fromCurrency("EUR").toCurrency("USD").rate(1.10).build()));
+                        .fromCurrency("EUR").toCurrency("USD").rate(new BigDecimal("1.10")).build()));
 
-        assertThat(service.getRate("EUR", "USD")).isEqualTo(1.10);
+        assertThat(service.getRate("EUR", "USD")).isEqualByComparingTo("1.10");
     }
 
     @Test
@@ -110,13 +111,26 @@ class ExchangeRateServiceTest {
     @Test
     void getAllCachedRates_shouldReturnList() {
         when(exchangeRateRepository.findAll()).thenReturn(Arrays.asList(
-                ExchangeRate.builder().fromCurrency("EUR").toCurrency("USD").rate(1.12).build(),
-                ExchangeRate.builder().fromCurrency("GBP").toCurrency("USD").rate(1.30).build()));
+                ExchangeRate.builder().fromCurrency("EUR").toCurrency("USD").rate(new BigDecimal("1.12")).build(),
+                ExchangeRate.builder().fromCurrency("GBP").toCurrency("USD").rate(new BigDecimal("1.30")).build()));
 
         List<ExchangeRateDTO> result = service.getAllCachedRates();
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getRate()).isEqualTo(1.12);
+        assertThat(result.get(0).getRate()).isEqualByComparingTo("1.12");
+    }
+
+    /**
+     * Un taux entier ou à décimales « rondes » doit être conservé exactement :
+     * c'est précisément ce que la virgule flottante ne garantit pas.
+     */
+    @Test
+    void getRate_shouldPreserveDecimalValueExactly() {
+        when(externalApiClient.getLatestRates("EUR")).thenReturn(apiResponse("CHF", 0.1));
+        when(exchangeRateRepository.findByFromCurrencyAndToCurrency("EUR", "CHF"))
+                .thenReturn(Optional.empty());
+
+        assertThat(service.getRate("EUR", "CHF")).isEqualByComparingTo(new BigDecimal("0.1"));
     }
 
     @Test

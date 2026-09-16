@@ -12,6 +12,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -35,22 +36,22 @@ public class ExchangeRateService {
     private final ExchangeRateRepository exchangeRateRepository;
 
     @Cacheable(value = "exchangeRates", key = "#from + '_' + #to")
-    public Double getRate(String from, String to) {
+    public BigDecimal getRate(String from, String to) {
         return resolveRate(from, to);
     }
 
     /** Force un appel au fournisseur externe et met le cache à jour avec la valeur fraîche. */
     @CachePut(value = "exchangeRates", key = "#from + '_' + #to")
-    public Double refreshRate(String from, String to) {
+    public BigDecimal refreshRate(String from, String to) {
         return resolveRate(from, to);
     }
 
-    private Double resolveRate(String from, String to) {
-        if (from.equals(to)) return 1.0;
+    private BigDecimal resolveRate(String from, String to) {
+        if (from.equals(to)) return BigDecimal.ONE;
 
         try {
             Map<String, Object> response = externalApiClient.getLatestRates(from);
-            Double rate = extractRate(response, to);
+            BigDecimal rate = extractRate(response, to);
             if (rate != null) {
                 saveRateToDb(from, to, rate);
                 return rate;
@@ -68,12 +69,16 @@ public class ExchangeRateService {
      * direct vers Double provoquait une ClassCastException et donc un 404
      * silencieux sur ces devises. On passe par Number.
      */
-    private Double extractRate(Map<String, Object> response, String to) {
+    private BigDecimal extractRate(Map<String, Object> response, String to) {
         if (response == null) return null;
         Object ratesObject = response.get("rates");
         if (!(ratesObject instanceof Map<?, ?> rates)) return null;
         Object value = rates.get(to);
-        return value instanceof Number number ? number.doubleValue() : null;
+        if (!(value instanceof Number number)) return null;
+        // On passe par la représentation textuelle : new BigDecimal(0.1d) vaudrait
+        // 0.1000000000000000055511151231257827..., alors que new BigDecimal("0.1")
+        // vaut exactement 0,1.
+        return new BigDecimal(number.toString());
     }
 
     @Transactional(readOnly = true)
@@ -91,7 +96,7 @@ public class ExchangeRateService {
                 .orElse(null);
     }
 
-    private void saveRateToDb(String from, String to, Double rate) {
+    private void saveRateToDb(String from, String to, BigDecimal rate) {
         ExchangeRate existing = exchangeRateRepository.findByFromCurrencyAndToCurrency(from, to)
                 .orElseGet(() -> ExchangeRate.builder().fromCurrency(from).toCurrency(to).build());
         existing.setRate(rate);
@@ -99,7 +104,7 @@ public class ExchangeRateService {
         exchangeRateRepository.save(existing);
     }
 
-    private Double getRateFromDb(String from, String to) {
+    private BigDecimal getRateFromDb(String from, String to) {
         ExchangeRate rate = exchangeRateRepository.findByFromCurrencyAndToCurrency(from, to)
                 .orElseThrow(() -> new RateNotFoundException(
                         "Exchange rate not found for " + from + " to " + to));

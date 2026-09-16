@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -15,9 +16,9 @@ import java.time.LocalDateTime;
 public class ConvertResponse {
     private String fromCurrency;
     private String toCurrency;
-    private Double amountFrom;
-    private Double amountTo;
-    private Double rate;
+    private BigDecimal amountFrom;
+    private BigDecimal amountTo;
+    private BigDecimal rate;
     private String source;
     private LocalDateTime timestamp;
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -29,14 +30,14 @@ public class ConversionResult {
     @Column(name = "to_currency", nullable = false, length = 3)
     private String toCurrency;
 
-    @Column(nullable = false)
-    private Double amountFrom;
+    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal amountFrom;
 
-    @Column(nullable = false)
-    private Double amountTo;
+    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal amountTo;
 
-    @Column(nullable = false)
-    private Double rate;
+    @Column(nullable = false, precision = 19, scale = 10)
+    private BigDecimal rate;
 
     @Column(nullable = false, length = 20)
     private String source;

@@ -11,6 +11,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +31,9 @@ public class CurrencyConversionService {
     private static final int DEFAULT_HISTORY_LIMIT = 50;
     private static final int MAX_HISTORY_LIMIT = 200;
 
+    /** Les montants renvoyés sont arrondis au centime, au plus proche. */
+    private static final int AMOUNT_SCALE = 2;
+
     private final ExchangeRateService exchangeRateService;
     private final ConversionResultRepository conversionResultRepository;
 
@@ -36,10 +41,11 @@ public class CurrencyConversionService {
     public ConvertResponse convert(ConvertRequest request) {
         String from = request.getFromCurrency().toUpperCase();
         String to = request.getToCurrency().toUpperCase();
-        Double amount = request.getAmount();
+        BigDecimal amount = request.getAmount();
 
-        Double rate = exchangeRateService.getRate(from, to);
-        Double result = amount * rate;
+        BigDecimal rate = exchangeRateService.getRate(from, to);
+        // Multiplication décimale exacte, puis arrondi monétaire explicite.
+        BigDecimal result = amount.multiply(rate).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
 
         conversionResultRepository.save(ConversionResult.builder()
                 .fromCurrency(from)
@@ -64,7 +70,7 @@ public class CurrencyConversionService {
     public ExchangeRateDTO refreshRate(String from, String to) {
         String normalizedFrom = from.toUpperCase();
         String normalizedTo = to.toUpperCase();
-        Double rate = exchangeRateService.refreshRate(normalizedFrom, normalizedTo);
+        BigDecimal rate = exchangeRateService.refreshRate(normalizedFrom, normalizedTo);
         return new ExchangeRateDTO(normalizedFrom, normalizedTo, rate);
     }
 
