@@ -2,6 +2,12 @@
 
 API Spring Boot 3 / Java 17 qui convertit une somme d'une devise vers une autre en utilisant des taux de change récupérés dynamiquement (API externe via **Spring WebClient**).
 
+> 📘 **Procédure de test pas à pas :** voir [GUIDE_DE_TEST.md](GUIDE_DE_TEST.md)
+> — lancement depuis le terminal et vérification de chaque fonctionnalité
+> exigée par le cahier des charges.
+
+> 🔗 **Lien du dépôt GitHub :** voir [LIEN_GITHUB.md](LIEN_GITHUB.md)
+
 ## Prérequis
 - Java 17, Maven 3.9+
 - PostgreSQL 15 + Redis 7 (ou les conteneurs fournis par Docker Compose)
