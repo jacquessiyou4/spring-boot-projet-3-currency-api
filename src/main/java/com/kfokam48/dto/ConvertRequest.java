@@ -1,5 +1,6 @@
 package com.kfokam48.dto;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.NotNull;
@@ -36,5 +37,9 @@ public class ConvertRequest {
      */
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
+    // Borne haute : la colonne est un NUMERIC(19,4). Sans cette limite, un
+    // montant démesuré passait la validation et faisait échouer l'INSERT,
+    // ce qui remontait au client en 500.
+    @DecimalMax(value = "1000000000000", message = "Amount must not exceed 1 000 000 000 000")
     private BigDecimal amount;
 }

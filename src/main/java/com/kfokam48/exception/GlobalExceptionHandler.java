@@ -1,6 +1,7 @@
 package com.kfokam48.exception;
 
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -55,6 +56,20 @@ public class GlobalExceptionHandler {
         Map<String, Object> error = new HashMap<>();
         error.put("status", 400);
         error.put("message", ex.getMessage());
+        error.put("timestamp", LocalDateTime.now());
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    /**
+     * Filet de sécurité : une contrainte de base violée (dépassement de
+     * capacité d'une colonne, unicité) doit se traduire par une erreur client,
+     * jamais par une 500 exposant une trace technique.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("status", 400);
+        error.put("message", "Request violates a database constraint (value out of range or duplicate)");
         error.put("timestamp", LocalDateTime.now());
         return ResponseEntity.badRequest().body(error);
     }

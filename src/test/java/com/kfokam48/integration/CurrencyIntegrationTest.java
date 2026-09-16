@@ -111,4 +111,27 @@ class CurrencyIntegrationTest {
                         .content("{\"fromCurrency\": \"\", \"amount\": -1}"))
                 .andExpect(status().isBadRequest());
     }
+
+    /**
+     * Régression : un montant dépassant la capacité de la colonne NUMERIC(19,4)
+     * passait la validation, faisait échouer l'INSERT et remontait en 500.
+     */
+    @Test
+    void convert_withOversizedAmount_shouldReturn400() throws Exception {
+        mockMvc.perform(post("/convert")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fromCurrency\":\"EUR\",\"toCurrency\":\"USD\",\"amount\":99999999999999999999}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    /** La limite d'historique est bornée explicitement plutôt que corrigée en silence. */
+    @Test
+    void getHistory_withOutOfRangeLimit_shouldReturn400() throws Exception {
+        mockMvc.perform(get("/history").param("limit", "-5"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/history").param("limit", "999"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/history").param("limit", "10"))
+                .andExpect(status().isOk());
+    }
 }

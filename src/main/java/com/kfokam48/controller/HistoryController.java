@@ -3,9 +3,12 @@ package com.kfokam48.controller;
 import com.kfokam48.dto.ConvertResponse;
 import com.kfokam48.service.CurrencyConversionService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,6 +17,7 @@ import java.util.List;
  * Endpoints de consultation et de purge de l'historique des conversions.
  */
 @RestController
+@Validated
 @RequestMapping("/history")
 @RequiredArgsConstructor
 @Tag(name = "Conversion History", description = "Historique des conversions")
@@ -24,7 +28,11 @@ public class HistoryController {
     @GetMapping
     @Operation(summary = "Récupérer l'historique des conversions")
     public ResponseEntity<List<ConvertResponse>> getHistory(
-            @RequestParam(defaultValue = "10") int limit) {
+            // Bornée explicitement : une valeur hors plage est refusée (400)
+            // au lieu d'être silencieusement remplacée par une autre.
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "limit must be at least 1")
+            @Max(value = 200, message = "limit must not exceed 200") int limit) {
         return ResponseEntity.ok(service.getHistory(limit));
     }
 
